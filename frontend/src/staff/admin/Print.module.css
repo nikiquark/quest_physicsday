@@ -65,6 +65,10 @@
   break-after: page;
 }
 
+.sheet:last-child {
+  break-after: auto;
+}
+
 .card {
   display: flex;
   flex-direction: column;
