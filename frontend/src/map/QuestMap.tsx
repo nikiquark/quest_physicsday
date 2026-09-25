@@ -27,7 +27,7 @@ interface Props {
 
 /** Must match the viewBox of building.svg: pin coordinates are fractions of it. */
 export const MAP_WIDTH = 1000;
-export const MAP_HEIGHT = 1400;
+export const MAP_HEIGHT = 1020;
 
 const clamp = (v: number) => Math.min(1, Math.max(0, v));
 
