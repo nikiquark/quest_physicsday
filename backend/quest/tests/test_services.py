@@ -19,7 +19,7 @@ from quest.services.scans import process_scan
 from quest.services.seed import reset_quest
 from quest.services.state import state_for
 from quest.services.stations import create_station, update_station
-from quest.services.stats import dashboard_stats
+from quest.services.stats import active_phone_participants, dashboard_stats
 
 pytestmark = pytest.mark.django_db
 
@@ -290,3 +290,19 @@ def test_login_rate_limit(seeded):
     with pytest.raises(auth.TooManyAttempts):
         auth.login("0987", "2.2.2.2")
     assert auth.login("0987", "3.3.3.3")[0] == "admin"
+
+
+def test_active_phone_participants(stations, finish):
+    kids = [register(f"k{i}") for i in range(3)]
+    process_scan(kids[0].route[0], [kids[0].marker_id, 5])  # 5 is paper: not listed
+    grant_prize(kids[1], force=True)  # got the prize: not active any more
+    for s in stations:
+        process_scan(s.id, [kids[2].marker_id])
+
+    rows = {r["marker_id"]: r for r in active_phone_participants()}
+    assert set(rows) == {kids[0].marker_id, kids[2].marker_id}
+    first = rows[kids[0].marker_id]
+    assert (first["name"], first["passed"], first["total"]) == ("k0", 1, 4)
+    assert first["current_station"] == Station.objects.get(pk=kids[0].route[1]).name
+    assert rows[kids[2].marker_id]["at_finish"] is True
+    assert rows[kids[2].marker_id]["current_station"] == finish.name

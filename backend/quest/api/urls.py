@@ -14,6 +14,7 @@ urlpatterns = [
     path("admin/stats", views.StatsView.as_view()),
     path("admin/stations", views.AdminStationsView.as_view()),
     path("admin/stations/<int:station_id>", views.AdminStationView.as_view()),
+    path("admin/participants", views.AdminParticipantsView.as_view()),
     path("admin/participants/<int:marker_id>", views.AdminParticipantView.as_view()),
     path("admin/participants/<int:marker_id>/visits", views.AdminVisitsView.as_view()),
     path("admin/participants/<int:marker_id>/visits/<int:station_id>", views.AdminVisitView.as_view()),

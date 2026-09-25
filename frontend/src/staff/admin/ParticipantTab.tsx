@@ -2,7 +2,7 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 
 import { api, errorText } from "../../api/client";
-import type { ParticipantDetail, StationProgress } from "../../api/types";
+import type { ActiveParticipant, DashboardStats, ParticipantDetail, StationProgress } from "../../api/types";
 import { StationList, formatTime } from "../../components/StationList";
 import styles from "./Admin.module.css";
 
@@ -13,7 +13,7 @@ const EVENT_TEXT: Record<string, string> = {
   visit_removed: "Отметка станции снята",
 };
 
-export function ParticipantTab() {
+export function ParticipantTab({ stats }: { stats: DashboardStats | null }) {
   const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<ParticipantDetail | null>(null);
   const [error, setError] = useState("");
@@ -59,7 +59,7 @@ export function ParticipantTab() {
         onSubmit={(e) => {
           e.preventDefault();
           const marker = Number(query);
-          if (Number.isInteger(marker) && marker >= 0) load(marker);
+          if (query && Number.isInteger(marker) && marker >= 0) load(marker);
         }}
       >
         <input
@@ -119,6 +119,15 @@ export function ParticipantTab() {
           )}
         </div>
       )}
+      <ActiveTable
+        stats={stats}
+        selected={p?.marker_id ?? null}
+        onOpen={(marker) => {
+          setQuery(String(marker));
+          load(marker);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
     </div>
   );
 }
@@ -130,4 +139,74 @@ function RestoreQr({ token }: { token: string }) {
     QRCode.toDataURL(url, { width: 320, margin: 2 }).then(setSrc);
   }, [url]);
   return src ? <img src={src} alt="QR для переноса сессии" className={styles.qr} /> : null;
+}
+
+/** All phone participants still in the quest; refreshed whenever the dashboard stats change. */
+function ActiveTable({
+  stats,
+  selected,
+  onOpen,
+}: {
+  stats: DashboardStats | null;
+  selected: number | null;
+  onOpen: (marker: number) => void;
+}) {
+  const [rows, setRows] = useState<ActiveParticipant[] | null>(null);
+  const [filter, setFilter] = useState("");
+
+  useEffect(() => {
+    api<ActiveParticipant[]>("admin/participants", { auth: "staff" })
+      .then(setRows)
+      .catch(() => {});
+  }, [stats]);
+
+  const needle = filter.trim().toLowerCase();
+  const shown = (rows ?? []).filter(
+    (r) => !needle || r.name.toLowerCase().includes(needle) || String(r.marker_id).startsWith(needle),
+  );
+
+  return (
+    <section className={styles.stack}>
+      <div className={styles.formRow}>
+        <h3 className={styles.grow}>Активные участники с телефоном{rows ? ` (${rows.length})` : ""}</h3>
+        <input
+          className={`input ${styles.searchInput}`}
+          placeholder="Фильтр: имя или №"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+      </div>
+      <p className="muted">Все, кто зарегистрировался с телефона и ещё не получил приз. Нажмите на строку, чтобы открыть участника.</p>
+      {!rows ? (
+        <p className="muted">Загрузка…</p>
+      ) : shown.length === 0 ? (
+        <p className="muted">{rows.length ? "Никто не подходит под фильтр." : "Активных участников нет."}</p>
+      ) : (
+        <table className={`${styles.table} ${styles.clickable}`}>
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Имя</th>
+              <th>Сейчас идёт</th>
+              <th className={styles.num}>Пройдено</th>
+              <th className={styles.num}>Регистрация</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((r) => (
+              <tr key={r.marker_id} className={r.marker_id === selected ? styles.selectedRow : ""} onClick={() => onOpen(r.marker_id)}>
+                <td>{r.marker_id}</td>
+                <td>{r.name}</td>
+                <td>{r.at_finish ? <span className={styles.finishTag}>🏁 на финиш</span> : (r.current_station ?? "—")}</td>
+                <td className={styles.num}>
+                  {r.passed} из {r.total}
+                </td>
+                <td className={styles.num}>{formatTime(r.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
+  );
 }

@@ -18,7 +18,7 @@ from quest.services.prizes import grant_prize
 from quest.services.seed import reset_quest
 from quest.services.state import state_for, station_payload
 from quest.services.stations import create_station, update_station
-from quest.services.stats import dashboard_stats
+from quest.services.stats import active_phone_participants, dashboard_stats
 
 STAFF_ROLES = (StaffPin.STATION, StaffPin.PRIZE, StaffPin.HELP)
 
@@ -158,6 +158,11 @@ def _participant_detail(participant: Participant) -> dict:
             for e in events
         ],
     }
+
+
+class AdminParticipantsView(AdminView):
+    def get(self, request):
+        return Response(active_phone_participants())
 
 
 class AdminParticipantView(AdminView):

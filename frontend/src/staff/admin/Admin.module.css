@@ -288,3 +288,25 @@
   color: var(--success);
   font-weight: 600;
 }
+
+.grow {
+  flex: 1;
+}
+
+.clickable tbody tr {
+  cursor: pointer;
+}
+
+.clickable tbody tr:hover {
+  background: var(--brand-soft);
+}
+
+.selectedRow {
+  background: var(--brand-soft);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.finishTag {
+  color: var(--success);
+  font-weight: 600;
+}

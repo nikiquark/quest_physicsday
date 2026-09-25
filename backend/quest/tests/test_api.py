@@ -45,6 +45,8 @@ def test_staff_roles_are_enforced(stations):
     assert station.get("/api/staff/markers/1").status_code == 403
     admin = staff_client("0987")
     assert admin.get("/api/admin/stats").status_code == 200
+    assert admin.get("/api/admin/participants").status_code == 200
+    assert station.get("/api/admin/participants").status_code == 403
     assert admin.get("/api/staff/markers/1").status_code == 200
 
 

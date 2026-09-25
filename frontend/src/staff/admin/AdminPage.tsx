@@ -16,7 +16,7 @@ type Tab = "dashboard" | "stations" | "participant" | "settings";
 const TABS: [Tab, string][] = [
   ["dashboard", "Обзор"],
   ["stations", "Станции и карта"],
-  ["participant", "Участник"],
+  ["participant", "Участники"],
   ["settings", "Настройки"],
 ];
 
@@ -65,7 +65,7 @@ export default function AdminPage() {
       <main className={styles.main}>
         {tab === "dashboard" && <Dashboard stats={stats} />}
         {tab === "stations" && <StationsTab stats={stats} />}
-        {tab === "participant" && <ParticipantTab />}
+        {tab === "participant" && <ParticipantTab stats={stats} />}
         {tab === "settings" && <SettingsTab />}
       </main>
     </div>

@@ -68,3 +68,13 @@ export interface AdminSettings {
 }
 
 export type ScanStatus = "accepted" | "already" | "unknown" | "disabled";
+
+export interface ActiveParticipant {
+  marker_id: number;
+  name: string;
+  current_station: string | null;
+  at_finish: boolean;
+  passed: number;
+  total: number;
+  created_at: string;
+}

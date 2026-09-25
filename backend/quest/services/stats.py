@@ -1,6 +1,7 @@
 from django.db.models import Count, Q
 
-from quest.models import Participant, Settings, Station
+from quest.models import Participant, Settings, Station, Visit
+from quest.services.state import StationSnapshot
 
 
 def dashboard_stats() -> dict:
@@ -44,3 +45,31 @@ def dashboard_stats() -> dict:
             for s in stations
         ],
     }
+
+
+def active_phone_participants() -> list[dict]:
+    """Phone participants still in the quest (no prize yet), for the admin table."""
+    snap = StationSnapshot.load()
+    enabled = snap.enabled_ids
+    names = {s.id: s.name for s in [*snap.stations, snap.finish]}
+    participants = list(
+        Participant.objects.filter(kind=Participant.PHONE, prize_at__isnull=True).order_by("marker_id")
+    )
+    visited: dict[int, set[int]] = {p.id: set() for p in participants}
+    for pid, sid in Visit.objects.filter(participant__in=participants).values_list("participant_id", "station_id"):
+        visited[pid].add(sid)
+    rows = []
+    for p in participants:
+        required = [sid for sid in p.route if sid in enabled]
+        rows.append(
+            {
+                "marker_id": p.marker_id,
+                "name": p.name,
+                "current_station": names.get(p.current_station_id),
+                "at_finish": p.current_station_id == snap.finish.id,
+                "passed": sum(1 for sid in required if sid in visited[p.id]),
+                "total": len(required),
+                "created_at": p.created_at.isoformat(),
+            }
+        )
+    return rows
