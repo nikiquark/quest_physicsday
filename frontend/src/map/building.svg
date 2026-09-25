@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720">
+  <!--
+    Building plan: an upside-down "П" drawn as an extruded block (top face + visible side walls).
+    Station pins are positioned on top of this image in fractions of the viewBox (0..1),
+    so the drawing can be edited freely as long as the viewBox stays 1000x720.
+  -->
+  <defs>
+    <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7f8fb"/>
+      <stop offset="1" stop-color="#eef0f5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- side walls (south and east faces) -->
+  <g stroke="#1c1c1c" stroke-width="3" stroke-linejoin="round">
+    <polygon points="330,60 352,96 352,416 330,380" fill="#c9cdd8"/>
+    <polygon points="900,60 922,96 922,616 900,580" fill="#c9cdd8"/>
+    <polygon points="100,580 900,580 922,616 122,616" fill="#dde0e8"/>
+  </g>
+
+  <!-- roof / floor plan -->
+  <polygon
+    points="100,60 330,60 330,380 670,380 670,60 900,60 900,580 100,580"
+    fill="url(#roof)" stroke="#1c1c1c" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- corridors (decorative) -->
+  <g stroke="#d5d8e1" stroke-width="2" stroke-dasharray="8 8" fill="none">
+    <polyline points="215,90 215,480 785,480 785,90"/>
+  </g>
+
+  <!-- entrance -->
+  <rect x="470" y="578" width="60" height="6" fill="#344ead"/>
+  <g fill="#344ead">
+    <polygon points="500,628 486,648 514,648"/>
+    <rect x="496" y="646" width="8" height="18"/>
+  </g>
+  <text x="500" y="698" text-anchor="middle"
+        font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif"
+        font-size="30" font-weight="700" fill="#111">Вход</text>
+</svg>

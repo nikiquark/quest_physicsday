@@ -1,0 +1,109 @@
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.index {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  font-weight: 700;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.desc,
+.time {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.badge {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.check {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  color: #fff;
+  font-weight: 800;
+}
+
+.visited .check {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.visited .index {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.current {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.current .index {
+  background: var(--brand);
+  color: #fff;
+}
+
+.finish .index {
+  background: transparent;
+}
+
+.flash {
+  animation: flash 1.6s ease-out;
+}
+
+@keyframes flash {
+  0% {
+    background: #bfe9cc;
+    transform: scale(1.02);
+  }
+  100% {
+    background: #fff;
+    transform: scale(1);
+  }
+}
