@@ -23,8 +23,8 @@ const GRID: Record<PerPage, { cols: number; rows: number }> = {
 // "\n" is a forced line break inside an item.
 const INSTRUCTION = [
   "Посети станции ФизКвеста",
-  "Пройди испытание",
-  "Покажи свой код",
+  "Пройди испытание на каждой станции",
+  "Не забудь показать свой код организатору на каждой станции",
   "Когда пройдешь все станции,\nполучи приз",
 ];
 
@@ -100,22 +100,14 @@ function layout(paper: Paper, perPage: PerPage, scale: number): Layout {
   const numberH = numberPt * PT_MM * LINE_HEIGHT;
   const indent = LIST_INDENT_EM * instructionPt * PT_MM;
 
-  // With the column as wide as the marker, a smaller marker wraps more lines:
-  // shrink it until the wrapped text fits above it.
-  let largest = Math.floor(innerW);
-  for (let i = 0; i < 5; i++) {
-    const lines = instructionLines(largest - indent, instructionPt);
-    const instructionH = lines * instructionPt * PT_MM * LINE_HEIGHT;
-    const next = Math.floor(Math.min(innerW, innerH - instructionH - numberH - 2 * GAP_MM)) - 1;
-    if (next >= largest) break;
-    largest = next;
-  }
-
-  // A scaled-down marker keeps the column wide enough for unwrapped text (or
-  // the whole card), so the text never takes more lines than it did above.
+  // The instruction column is as wide as its longest line, up to the card width;
+  // the marker takes the height left under the wrapped text.
+  const column = Math.min(innerW, Math.ceil(instructionWidth(instructionPt) + indent) + 1);
+  const lines = instructionLines(column - indent, instructionPt);
+  const instructionH = lines * instructionPt * PT_MM * LINE_HEIGHT;
+  const largest = Math.floor(Math.min(innerW, innerH - instructionH - numberH - 2 * GAP_MM)) - 1;
   const marker = Math.floor((largest * scale) / 100);
-  const column = Math.min(innerW, Math.max(marker, Math.ceil(instructionWidth(instructionPt) + indent) + 1));
-  return { marker, column, instructionPt, numberPt };
+  return { marker, column: Math.max(column, marker), instructionPt, numberPt };
 }
 
 /** Printable paper markers: A4/A5 sheets with 1, 2 or 4 cards (instruction + marker + number). */
