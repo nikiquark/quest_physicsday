@@ -15,11 +15,20 @@ const PAPER: Record<Paper, { w: number; h: number }> = {
 };
 
 // Grid for each cards-per-page option: two cards are stacked, four form 2×2.
-const GRID: Record<PerPage, { cols: number; rows: number }> = {
-  1: { cols: 1, rows: 1 },
-  2: { cols: 1, rows: 2 },
-  4: { cols: 2, rows: 2 },
+// Two stacked cells are landscape, so their content is turned 90° to stay portrait.
+const GRID: Record<PerPage, { cols: number; rows: number; rotate: boolean }> = {
+  1: { cols: 1, rows: 1, rotate: false },
+  2: { cols: 1, rows: 2, rotate: true },
+  4: { cols: 2, rows: 2, rotate: false },
 };
+
+/** Size of a card's content box before rotation, mm. */
+function cardSize(paper: Paper, perPage: PerPage): { w: number; h: number } {
+  const { cols, rows, rotate } = GRID[perPage];
+  const w = PAPER[paper].w / cols;
+  const h = PAPER[paper].h / rows;
+  return rotate ? { w: h, h: w } : { w, h };
+}
 
 const INSTRUCTION_KEY = "pq_print_instruction";
 
@@ -76,10 +85,9 @@ interface Layout {
 
 /** Fonts scaled to the card, and the marker at `scale`% of the largest that fits under the instruction. */
 function layout(paper: Paper, perPage: PerPage, scale: number, html: string): Layout {
-  const { w, h } = PAPER[paper];
-  const { cols, rows } = GRID[perPage];
-  const innerW = w / cols - 2 * CELL_PADDING_MM;
-  const innerH = h / rows - 2 * CELL_PADDING_MM;
+  const card = cardSize(paper, perPage);
+  const innerW = card.w - 2 * CELL_PADDING_MM;
+  const innerH = card.h - 2 * CELL_PADDING_MM;
   const base = Math.min(innerW, innerH * 0.65);
   const instructionPt = clamp(Math.round(base / 7), 9, 20);
   const numberPt = clamp(Math.round(base / 5), 12, 36);
@@ -119,7 +127,8 @@ export default function PrintPage() {
   for (let i = 0; i < ids.length; i += perPage) pages.push(ids.slice(i, i + perPage));
 
   const { w, h } = PAPER[paper];
-  const { cols, rows } = GRID[perPage];
+  const { cols, rows, rotate } = GRID[perPage];
+  const card = cardSize(paper, perPage);
   const { marker: size, column, instructionPt, numberPt } = useMemo(
     () => layout(paper, perPage, scale, instruction),
     [paper, perPage, scale, instruction],
@@ -130,7 +139,14 @@ export default function PrintPage() {
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
   };
-  const cardStyle = { padding: `${CELL_PADDING_MM}mm` };
+  const contentStyle = {
+    width: `${card.w}mm`,
+    height: `${card.h}mm`,
+    padding: `${CELL_PADDING_MM}mm`,
+    // Rotated content keeps its unrotated box anchored at the cell's bottom-left, so it
+    // sticks out upwards into the sheet, never below it (Chrome paginates by that box).
+    transform: rotate ? `translateX(${card.h}mm) rotate(-90deg)` : undefined,
+  };
   const columnStyle = { width: `${column}mm`, gap: `${GAP_MM}mm` };
 
   return (
@@ -198,17 +214,19 @@ export default function PrintPage() {
         {pages.map((page) => (
           <section key={page[0]} className={styles.sheet} style={sheetStyle}>
             {page.map((id) => (
-              <div key={id} className={perPage > 1 ? `${styles.card} ${styles.cut}` : styles.card} style={cardStyle}>
-                <div className={styles.column} style={columnStyle}>
-                  <div
-                    className={styles.instruction}
-                    style={{ fontSize: `${instructionPt}pt` }}
-                    dangerouslySetInnerHTML={{ __html: instruction }}
-                  />
-                  <div className={styles.markerBox} style={{ width: `${size}mm` }}>
-                    <MarkerSvg id={id} quietZone={0} style={{ display: "block", width: `${size}mm`, height: `${size}mm` }} />
-                    <div className={styles.number} style={{ fontSize: `${numberPt}pt`, marginTop: `${GAP_MM}mm` }}>
-                      № {id}
+              <div key={id} className={perPage > 1 ? `${styles.card} ${styles.cut}` : styles.card}>
+                <div className={styles.content} style={contentStyle}>
+                  <div className={styles.column} style={columnStyle}>
+                    <div
+                      className={styles.instruction}
+                      style={{ fontSize: `${instructionPt}pt` }}
+                      dangerouslySetInnerHTML={{ __html: instruction }}
+                    />
+                    <div className={styles.markerBox} style={{ width: `${size}mm` }}>
+                      <MarkerSvg id={id} quietZone={0} style={{ display: "block", width: `${size}mm`, height: `${size}mm` }} />
+                      <div className={styles.number} style={{ fontSize: `${numberPt}pt`, marginTop: `${GAP_MM}mm` }}>
+                        № {id}
+                      </div>
                     </div>
                   </div>
                 </div>

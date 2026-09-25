@@ -70,11 +70,21 @@
 }
 
 .card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Fills the card; in landscape cells it is portrait and turned 90° around its bottom-left corner. */
+.content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  transform-origin: bottom left;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .cut {
