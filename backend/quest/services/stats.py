@@ -14,7 +14,7 @@ def dashboard_stats() -> dict:
         prize_total=Count("id", filter=Q(prize_at__isnull=False)),
         prize_forced=Count("id", filter=Q(prize_forced=True)),
     )
-    stations = Station.objects.annotate(visited_total=Count("visits"))
+    stations = Station.objects.annotate(visited_total=Count("visits")).order_by("is_finish", "number", "id")
     active = dict(
         Participant.objects.filter(prize_at__isnull=True, activated_at__isnull=False)
         .exclude(current_station=None)
