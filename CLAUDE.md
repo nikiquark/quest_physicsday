@@ -26,9 +26,34 @@ docker compose up -d --build
 docker compose -f docker-compose.dev.yml run --rm backend pytest
 # тесты фронта
 cd frontend && npm test
-# нагрузочный тест против запущенного стенда
+# нагрузочный тест против запущенного стенда (СБРАСЫВАЕТ данные квеста!)
 docker compose -f docker-compose.dev.yml run --rm backend python loadtest/run.py --base http://backend:8000
 ```
+
+Без Docker (локальный Postgres, без Redis — один процесс, in-memory channel layer):
+
+```bash
+cd backend && pip install -r requirements-dev.txt
+export REDIS_URL= DJANGO_DEBUG=1 DJANGO_ALLOWED_HOSTS='*' POSTGRES_HOST=/var/run/postgresql POSTGRES_USER=$USER POSTGRES_PASSWORD= POSTGRES_DB=physquest
+python manage.py migrate && python manage.py seed && uvicorn config.asgi:application --port 8000
+cd frontend && npm install && npm run copy-opencv && npm run dev
+```
+
+Django-админка (модели как есть, для отладки): `/django-admin/`, суперпользователь из `.env`.
+
+## Деплой
+
+1. VPS с Docker, `git clone`, `cp .env.example .env`, заполнить домен, пароли, `DJANGO_SECRET_KEY`.
+2. `docker compose up -d --build` — наружу `127.0.0.1:${WEB_PORT}`.
+3. Внешний nginx + certbot по `deploy/nginx.host.conf.example` (важно: `Upgrade` для WS, таймауты 3600 с, `X-Forwarded-For $remote_addr`).
+4. Войти в `/staff` с PIN `0987`, сменить PIN-коды, завести станции, расставить их на карте, распечатать бумажные маркеры (`/staff/admin/print`).
+5. Прогон: зарегистрироваться, отсканировать, выдать приз → «Сбросить» в настройках.
+
+## Производительность
+
+- Postgres-соединения: пул psycopg (`DB_POOL_MAX` на воркер). Под ASGI нельзя `CONN_MAX_AGE>0` — соединения утекают по потокам.
+- Замер `loadtest/run.py` (1 процесс uvicorn, ноутбук): 500 участников на WS, 10 станций × группы по 15 → 5000 отметок за ~8 с; скан группы p95 ≈ 125 мс, доставка на телефон p95 ≈ 180 мс.
+- Распознавание: кадр уменьшается до ширины 1600 px; OpenCV.js находит 13 маркеров в кадре за один проход.
 
 ## Архитектура
 

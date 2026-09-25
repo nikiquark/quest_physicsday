@@ -1,0 +1,42 @@
+# Host nginx in front of the docker compose stack (TLS via Let's Encrypt / certbot).
+# Copy to /etc/nginx/sites-available/physquest, replace quest.example.com, then:
+#   sudo ln -s /etc/nginx/sites-available/physquest /etc/nginx/sites-enabled/
+#   sudo certbot --nginx -d quest.example.com
+#   sudo nginx -t && sudo systemctl reload nginx
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 80;
+    server_name quest.example.com;
+    location /.well-known/acme-challenge/ { root /var/www/html; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name quest.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/quest.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/quest.example.com/privkey.pem;
+
+    client_max_body_size 1m;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;   # WEB_PORT from .env
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        # Overwrite (not append) so clients cannot spoof their IP for the PIN rate limit.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        # WebSockets stay open for the whole event.
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+}
