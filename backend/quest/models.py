@@ -10,7 +10,7 @@ class Station(models.Model):
     number = models.PositiveIntegerField(default=0)
     description = models.CharField(max_length=300, blank=True)
     x = models.FloatField(default=0.5)
-    y = models.FloatField(default=0.5)
+    y = models.FloatField(default=0.36)  # centre of the second floor on the map
     enabled = models.BooleanField(default=True)
     is_finish = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

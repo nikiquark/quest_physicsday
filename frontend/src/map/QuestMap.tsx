@@ -25,6 +25,10 @@ interface Props {
   className?: string;
 }
 
+/** Must match the viewBox of building.svg: pin coordinates are fractions of it. */
+export const MAP_WIDTH = 1000;
+export const MAP_HEIGHT = 1400;
+
 const clamp = (v: number) => Math.min(1, Math.max(0, v));
 
 export function QuestMap({ stations, highlightIds = [], labelHighlighted, editable, onMove, className }: Props) {
@@ -37,7 +41,11 @@ export function QuestMap({ stations, highlightIds = [], labelHighlighted, editab
   };
 
   return (
-    <div ref={wrapRef} className={`${styles.wrap} ${className ?? ""}`}>
+    <div
+      ref={wrapRef}
+      className={`${styles.wrap} ${className ?? ""}`}
+      style={{ aspectRatio: `${MAP_WIDTH} / ${MAP_HEIGHT}` }}
+    >
       <img src={buildingUrl} alt="Карта здания" className={styles.building} draggable={false} />
       {stations.map((station) => {
         const pos = drag?.id === station.id ? drag : station;
