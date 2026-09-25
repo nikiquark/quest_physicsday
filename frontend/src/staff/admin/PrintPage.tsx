@@ -20,19 +20,48 @@ const GRID: Record<PerPage, { cols: number; rows: number }> = {
   4: { cols: 2, rows: 2 },
 };
 
-const CELL_PADDING_MM = 12;
-const LABEL_MM = 16;
+const INSTRUCTION = [
+  "Подойди на станцию",
+  "Выполни задание",
+  "Покажи свой код",
+  "После посещения всех станций приходи за призом",
+];
 
-/** Largest marker side (mm) that fits a card together with its number. */
-function markerSize(paper: Paper, perPage: PerPage): number {
-  const { w, h } = PAPER[paper];
-  const { cols, rows } = GRID[perPage];
-  const fitW = w / cols - 2 * CELL_PADDING_MM;
-  const fitH = h / rows - 2 * CELL_PADDING_MM - LABEL_MM;
-  return Math.floor(Math.min(fitW, fitH));
+const CELL_PADDING_MM = 8;
+const GAP_MM = 4;
+const PT_MM = 25.4 / 72;
+const LINE_HEIGHT = 1.3;
+// Conservative average glyph width of Cyrillic text, in em.
+const CHAR_EM = 0.6;
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+interface Layout {
+  marker: number; // mm
+  instructionPt: number;
+  numberPt: number;
 }
 
-/** Printable paper markers: A4/A5 sheets with 1, 2 or 4 cards (marker + number). */
+/** Fonts scaled to the card, and the largest marker that fits under the instruction. */
+function layout(paper: Paper, perPage: PerPage): Layout {
+  const { w, h } = PAPER[paper];
+  const { cols, rows } = GRID[perPage];
+  const innerW = w / cols - 2 * CELL_PADDING_MM;
+  const innerH = h / rows - 2 * CELL_PADDING_MM;
+  const base = Math.min(innerW, innerH * 0.65);
+  const instructionPt = clamp(Math.round(base / 7), 9, 20);
+  const numberPt = clamp(Math.round(base / 5), 12, 36);
+
+  const charsPerLine = Math.floor(innerW / (CHAR_EM * instructionPt * PT_MM));
+  const lines = INSTRUCTION.reduce((n, line) => n + Math.ceil(line.length / charsPerLine), 0);
+  const instructionH = lines * instructionPt * PT_MM * LINE_HEIGHT;
+  const numberH = numberPt * PT_MM * LINE_HEIGHT;
+
+  const marker = Math.floor(Math.min(innerW, innerH - instructionH - numberH - 2 * GAP_MM)) - 1;
+  return { marker, instructionPt, numberPt };
+}
+
+/** Printable paper markers: A4/A5 sheets with 1, 2 or 4 cards (instruction + marker + number). */
 export default function PrintPage() {
   const [from, setFrom] = useState(0);
   const [to, setTo] = useState(249);
@@ -46,15 +75,14 @@ export default function PrintPage() {
 
   const { w, h } = PAPER[paper];
   const { cols, rows } = GRID[perPage];
-  const size = markerSize(paper, perPage);
+  const { marker: size, instructionPt, numberPt } = layout(paper, perPage);
   const sheetStyle = {
     width: `${w}mm`,
     height: `${h}mm`,
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
   };
-  // 80 mm marker ↔ 16 pt number, as on the original A4×4 layout.
-  const numberStyle = { fontSize: `${Math.max(12, Math.round(size / 5))}pt` };
+  const cardStyle = { padding: `${CELL_PADDING_MM}mm`, gap: `${GAP_MM}mm` };
 
   return (
     <div>
@@ -94,9 +122,14 @@ export default function PrintPage() {
       {pages.map((page) => (
         <section key={page[0]} className={styles.sheet} style={sheetStyle}>
           {page.map((id) => (
-            <div key={id} className={perPage > 1 ? `${styles.card} ${styles.cut}` : styles.card}>
+            <div key={id} className={perPage > 1 ? `${styles.card} ${styles.cut}` : styles.card} style={cardStyle}>
+              <div className={styles.instruction} style={{ fontSize: `${instructionPt}pt` }}>
+                {INSTRUCTION.map((line) => (
+                  <div key={line}>{line}</div>
+                ))}
+              </div>
               <MarkerSvg id={id} quietZone={0} style={{ width: `${size}mm`, height: `${size}mm` }} />
-              <div className={styles.number} style={numberStyle}>
+              <div className={styles.number} style={{ fontSize: `${numberPt}pt` }}>
                 № {id}
               </div>
             </div>

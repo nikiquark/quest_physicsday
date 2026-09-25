@@ -34,14 +34,20 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6mm;
+  overflow: hidden;
 }
 
 .cut {
   border: 0.2mm dashed #bbb;
 }
 
+.instruction {
+  line-height: 1.3;
+  text-align: center;
+}
+
 .number {
+  line-height: 1.3;
   font-weight: 700;
 }
 
