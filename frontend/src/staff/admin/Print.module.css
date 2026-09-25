@@ -46,6 +46,10 @@
   flex-direction: column;
 }
 
+.markerBox {
+  align-self: center;
+}
+
 .instruction {
   margin: 0;
   padding-left: 1.4em;

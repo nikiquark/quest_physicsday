@@ -83,7 +83,7 @@ function instructionLines(widthMm: number, pt: number): number {
 
 interface Layout {
   marker: number; // mm
-  column: number; // mm, width of the instruction column; the marker is left-aligned in it
+  column: number; // mm, width of the instruction column; the marker is centered in it
   instructionPt: number;
   numberPt: number;
 }
@@ -201,7 +201,7 @@ export default function PrintPage() {
                     <li key={line}>{line}</li>
                   ))}
                 </ol>
-                <div style={{ width: `${size}mm` }}>
+                <div className={styles.markerBox} style={{ width: `${size}mm` }}>
                   <MarkerSvg id={id} quietZone={0} style={{ display: "block", width: `${size}mm`, height: `${size}mm` }} />
                   <div className={styles.number} style={{ fontSize: `${numberPt}pt`, marginTop: `${GAP_MM}mm` }}>
                     № {id}
