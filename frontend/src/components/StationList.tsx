@@ -8,6 +8,8 @@ interface Props {
   currentIds?: number[];
   flashId?: number | null;
   showDescription?: boolean;
+  /** Station numbers (as on the map). Hidden for participants: in route order they look random. */
+  showNumbers?: boolean;
   action?: (station: StationProgress) => ReactNode;
 }
 
@@ -16,7 +18,7 @@ export function formatTime(iso: string | null): string {
   return new Date(iso).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 }
 
-export function StationList({ stations, currentIds = [], flashId, showDescription, action }: Props) {
+export function StationList({ stations, currentIds = [], flashId, showDescription, showNumbers = true, action }: Props) {
   return (
     <ol className={styles.list}>
       {stations.map((station) => {
@@ -32,7 +34,7 @@ export function StationList({ stations, currentIds = [], flashId, showDescriptio
           .join(" ");
         return (
           <li key={station.id} className={classes}>
-            <span className={styles.index}>{station.is_finish ? "🏁" : station.number}</span>
+            {showNumbers && <span className={styles.index}>{station.is_finish ? "🏁" : station.number}</span>}
             <span className={styles.body}>
               <span className={styles.name}>{station.name}</span>
               {current && !station.visited && <span className={styles.badge}>Сейчас сюда</span>}

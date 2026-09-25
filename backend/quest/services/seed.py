@@ -9,7 +9,7 @@ def ensure_seed() -> None:
     """Idempotent: finish station, settings row, default PINs, paper participants."""
     with transaction.atomic():
         if not Station.objects.filter(is_finish=True).exists():
-            Station.objects.create(name=FINISH_NAME, number=0, x=0.5, y=0.887, is_finish=True)
+            Station.objects.create(name=FINISH_NAME, number=0, x=0.5, y=0.415, is_finish=True)
         Settings.load()
         for role, pin in StaffPin.DEFAULTS.items():
             StaffPin.objects.get_or_create(role=role, defaults={"pin": pin})

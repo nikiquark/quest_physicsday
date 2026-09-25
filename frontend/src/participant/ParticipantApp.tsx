@@ -82,7 +82,7 @@ function Quest({ state, online }: { state: ParticipantState; online: boolean }) 
                 <span className={styles.nextName}>{current.name}</span>
               </div>
             ) : null}
-            <StationList stations={stations} currentIds={currentIds} flashId={flashId} showDescription />
+            <StationList stations={stations} currentIds={currentIds} flashId={flashId} showDescription showNumbers={false} />
           </>
         )}
         {tab === "code" && <CodeTab markerId={participant.marker_id} />}

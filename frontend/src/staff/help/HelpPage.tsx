@@ -125,7 +125,7 @@ function Panel({ info }: { info: Info }) {
         </div>
       </div>
       <div className={styles.list}>
-        <StationList stations={stations} currentIds={highlight} />
+        <StationList stations={stations} currentIds={highlight} showNumbers={false} />
       </div>
       <QuestMap stations={stations} highlightIds={highlight} />
     </div>
