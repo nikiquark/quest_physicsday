@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+frontend/dist/
+frontend/public/opencv/
+backend/staticfiles/
+.venv/
+.idea/
+.vscode/
