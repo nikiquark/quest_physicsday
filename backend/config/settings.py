@@ -68,8 +68,16 @@ DATABASES = {
         "PASSWORD": env("POSTGRES_PASSWORD", "physquest"),
         "HOST": env("POSTGRES_HOST", "postgres"),
         "PORT": env("POSTGRES_PORT", "5432"),
-        "CONN_MAX_AGE": 60,
-        "CONN_HEALTH_CHECKS": True,
+        # Under ASGI every request may run in its own thread, so persistent per-thread
+        # connections pile up. A shared psycopg pool per worker process bounds them.
+        "CONN_MAX_AGE": 0,
+        "OPTIONS": {
+            "pool": {
+                "min_size": 2,
+                "max_size": int(env("DB_POOL_MAX", "20")),
+                "timeout": 20,
+            }
+        },
     }
 }
 
