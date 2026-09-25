@@ -1,0 +1,290 @@
+.admin {
+  min-height: 100dvh;
+  background: var(--surface);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.dotOn {
+  background: var(--success);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tab {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.tab:hover {
+  background: var(--surface);
+}
+
+.tabActive {
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.statValue {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  font-weight: 600;
+}
+
+.statNote {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.warn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fff4d6;
+  color: #8a6400;
+  font-weight: 600;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.table th,
+.table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.table th {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.disabledRow {
+  opacity: 0.5;
+}
+
+.tag {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.mapBox {
+  padding: 12px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.stationRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.stationNum {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.stationInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1.5px solid var(--brand);
+}
+
+.formRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.numInput {
+  width: 80px;
+  flex: none;
+}
+
+.searchInput {
+  max-width: 220px;
+  font-size: 20px;
+}
+
+.events {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.qr {
+  width: 280px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.settings {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings h3 {
+  margin-bottom: 6px;
+}
+
+.settings p {
+  margin: 0 0 10px;
+}
+
+.pins {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pinRow {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.danger {
+  border-color: var(--danger);
+}
+
+.ok {
+  color: var(--success);
+  font-weight: 600;
+}
