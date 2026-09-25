@@ -1,0 +1,116 @@
+.stationBtn {
+  justify-content: flex-start;
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.stationNum,
+.stationNumBig {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+}
+
+.stationTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stationTitle h1 {
+  font-size: 26px;
+}
+
+.stationNumBig {
+  width: 48px;
+  height: 48px;
+  font-size: 22px;
+  flex: none;
+}
+
+.scanBtn {
+  min-height: 96px;
+  font-size: 26px;
+}
+
+.conn {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #fff4d6;
+  color: #8a6400;
+}
+
+.open {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.closed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.scanTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 10px) 14px 10px;
+  background: linear-gradient(rgb(0 0 0 / 0.7), transparent);
+  color: #fff;
+}
+
+.scanBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 14px calc(env(safe-area-inset-bottom) + 14px);
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.8) 30%);
+  color: #fff;
+}
+
+.counter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+
+.counterNum {
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.lastIds {
+  width: 100%;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 12px;
+}
+
+.already {
+  font-size: 15px;
+  opacity: 0.8;
+}

@@ -1,0 +1,104 @@
+.bigBtn {
+  min-height: 96px;
+  font-size: 26px;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.who h2 {
+  font-size: 26px;
+}
+
+.markerNum {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.banner {
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1.5px solid;
+}
+
+.banner h2 {
+  font-size: 20px;
+}
+
+.banner p {
+  margin: 6px 0 0;
+}
+
+.good {
+  background: var(--success-soft);
+  border-color: var(--success);
+  color: #11632e;
+}
+
+.bad {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+  color: #8e2219;
+}
+
+.gray {
+  background: var(--surface);
+  border-color: #b9bcc4;
+  color: #3b3e45;
+}
+
+.actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0 calc(env(safe-area-inset-bottom) + 12px);
+  background: #fff;
+}
+
+.granted {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--success);
+  color: #fff;
+  text-align: center;
+}
+
+.granted h2 {
+  font-size: 34px;
+}
+
+.grantedIcon {
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.scanHint {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 12px);
+  left: 12px;
+  right: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  text-align: center;
+}
+
+.scanBottom {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: calc(env(safe-area-inset-bottom) + 14px);
+}
