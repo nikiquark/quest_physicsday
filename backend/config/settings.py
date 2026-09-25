@@ -87,7 +87,21 @@ if REDIS_URL:
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
-            "CONFIG": {"hosts": [REDIS_URL], "capacity": 1500, "expiry": 30},
+            "CONFIG": {
+                # redis-py >= 8 defaults: 5 s socket read timeout (equal to channels_redis' BZPOPMIN
+                # wait, which kills idle consumers) and a 100-connection pool that fails instead of
+                # waiting (500 phones reconnecting at once exhaust it). Override both.
+                "hosts": [
+                    {
+                        "address": REDIS_URL,
+                        "socket_timeout": 30,
+                        "socket_connect_timeout": 5,
+                        "max_connections": 2000,
+                    }
+                ],
+                "capacity": 1500,
+                "expiry": 30,
+            },
         }
     }
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": REDIS_URL}}

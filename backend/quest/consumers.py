@@ -41,7 +41,10 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, code):
         for group in getattr(self, "groups_joined", []):
-            await self.channel_layer.group_discard(group, self.channel_name)
+            try:
+                await self.channel_layer.group_discard(group, self.channel_name)
+            except Exception:  # the membership expires by itself; never fail a disconnect
+                log.warning("group_discard failed for %s", group, exc_info=True)
 
     async def receive_json(self, content, **kwargs):
         if content.get("type") == "ping":
