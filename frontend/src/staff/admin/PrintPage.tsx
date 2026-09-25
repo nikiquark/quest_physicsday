@@ -41,6 +41,15 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 // Marker size options, % of the largest marker that fits the card.
 const SCALES = [100, 90, 80, 70, 60, 50];
 
+/** Russian plural form for `n`: one (1, 21), few (2–4, 22–24), many (0, 5–20, 25). */
+function plural(n: number, one: string, few: string, many: string): string {
+  const d = n % 10;
+  const dd = n % 100;
+  if (d === 1 && dd !== 11) return one;
+  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return few;
+  return many;
+}
+
 let measureBox: HTMLDivElement | null = null;
 
 /** Size of the instruction HTML at `pt`, mm: unwrapped when `widthMm` is omitted, else wrapped to it. */
@@ -87,8 +96,9 @@ function layout(paper: Paper, perPage: PerPage, scale: number, html: string): La
 
 /** Printable paper markers: A4/A5 sheets with 1, 2 or 4 cards (instruction + marker + number). */
 export default function PrintPage() {
-  const [from, setFrom] = useState(0);
-  const [to, setTo] = useState(249);
+  // Range inputs keep their raw text: a controlled numeric value would leave the "0" when typing "10" after it.
+  const [fromText, setFromText] = useState("0");
+  const [toText, setToText] = useState("249");
   const [paper, setPaper] = useState<Paper>("A4");
   const [perPage, setPerPage] = useState<PerPage>(4);
   const [scale, setScale] = useState(70);
@@ -102,7 +112,9 @@ export default function PrintPage() {
   };
 
   const ids: number[] = [];
-  for (let id = Math.max(0, from); id <= Math.min(249, to); id++) ids.push(id);
+  const from = parseInt(fromText, 10);
+  const to = parseInt(toText, 10);
+  for (let id = Math.max(0, from || 0); id <= Math.min(249, Number.isNaN(to) ? 249 : to); id++) ids.push(id);
   const pages: number[][] = [];
   for (let i = 0; i < ids.length; i += perPage) pages.push(ids.slice(i, i + perPage));
 
@@ -128,11 +140,11 @@ export default function PrintPage() {
         <Link to="/staff/admin">← Назад</Link>
         <label>
           с №
-          <input className="input" type="number" min={0} max={249} value={from} onChange={(e) => setFrom(Number(e.target.value))} />
+          <input className="input" type="number" min={0} max={249} value={fromText} onChange={(e) => setFromText(e.target.value)} />
         </label>
         <label>
           по №
-          <input className="input" type="number" min={0} max={249} value={to} onChange={(e) => setTo(Number(e.target.value))} />
+          <input className="input" type="number" min={0} max={249} value={toText} onChange={(e) => setToText(e.target.value)} />
         </label>
         <label>
           Формат
@@ -171,9 +183,13 @@ export default function PrintPage() {
             </button>
           </div>
         </div>
-        <span className="muted">
-          {ids.length} маркеров, {pages.length} листов {paper}, маркер {(size / 10).toFixed(1).replace(".", ",")} см
-        </span>
+        <div className="muted">
+          {ids.length} {plural(ids.length, "маркер", "маркера", "маркеров")}
+          <br />
+          {pages.length} {plural(pages.length, "лист", "листа", "листов")} {paper}
+          <br />
+          маркер {(size / 10).toFixed(1).replace(".", ",")}&nbsp;см
+        </div>
         <button className="btn" onClick={() => window.print()}>
           Печать / PDF
         </button>
