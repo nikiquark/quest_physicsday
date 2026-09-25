@@ -9,3 +9,4 @@ backend/staticfiles/
 .venv/
 .idea/
 .vscode/
+*.tsbuildinfo
