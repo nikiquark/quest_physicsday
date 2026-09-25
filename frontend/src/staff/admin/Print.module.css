@@ -22,12 +22,8 @@
 }
 
 .sheet {
-  width: 210mm;
-  height: 297mm;
   margin: 16px auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
   background: #fff;
   box-shadow: 0 2px 12px rgb(0 0 0 / 0.12);
   break-after: page;
@@ -39,22 +35,14 @@
   align-items: center;
   justify-content: center;
   gap: 6mm;
+}
+
+.cut {
   border: 0.2mm dashed #bbb;
 }
 
-.marker {
-  width: 80mm;
-  height: 80mm;
-}
-
 .number {
-  font-size: 16pt;
   font-weight: 700;
-}
-
-@page {
-  size: A4;
-  margin: 0;
 }
 
 @media print {
