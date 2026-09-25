@@ -24,7 +24,7 @@ const INSTRUCTION = [
   "Подойди на станцию",
   "Выполни задание",
   "Покажи свой код",
-  "После посещения всех станций приходи за призом",
+  "Пройди все станции — получи приз",
 ];
 
 const CELL_PADDING_MM = 8;
@@ -33,6 +33,8 @@ const PT_MM = 25.4 / 72;
 const LINE_HEIGHT = 1.3;
 // Conservative average glyph width of Cyrillic text, in em.
 const CHAR_EM = 0.6;
+// Left indent of the numbered list that holds the "1." markers, in em.
+const LIST_INDENT_EM = 1.4;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -51,13 +53,20 @@ function layout(paper: Paper, perPage: PerPage): Layout {
   const base = Math.min(innerW, innerH * 0.65);
   const instructionPt = clamp(Math.round(base / 7), 9, 20);
   const numberPt = clamp(Math.round(base / 5), 12, 36);
-
-  const charsPerLine = Math.floor(innerW / (CHAR_EM * instructionPt * PT_MM));
-  const lines = INSTRUCTION.reduce((n, line) => n + Math.ceil(line.length / charsPerLine), 0);
-  const instructionH = lines * instructionPt * PT_MM * LINE_HEIGHT;
   const numberH = numberPt * PT_MM * LINE_HEIGHT;
 
-  const marker = Math.floor(Math.min(innerW, innerH - instructionH - numberH - 2 * GAP_MM)) - 1;
+  // The list is as wide as the marker, so a smaller marker wraps more lines:
+  // shrink the marker until the wrapped text fits above it.
+  let marker = Math.floor(innerW);
+  for (let i = 0; i < 5; i++) {
+    const textW = marker - LIST_INDENT_EM * instructionPt * PT_MM;
+    const charsPerLine = Math.floor(textW / (CHAR_EM * instructionPt * PT_MM));
+    const lines = INSTRUCTION.reduce((n, line) => n + Math.ceil(line.length / charsPerLine), 0);
+    const instructionH = lines * instructionPt * PT_MM * LINE_HEIGHT;
+    const next = Math.floor(Math.min(innerW, innerH - instructionH - numberH - 2 * GAP_MM)) - 1;
+    if (next >= marker) break;
+    marker = next;
+  }
   return { marker, instructionPt, numberPt };
 }
 
@@ -123,11 +132,11 @@ export default function PrintPage() {
         <section key={page[0]} className={styles.sheet} style={sheetStyle}>
           {page.map((id) => (
             <div key={id} className={perPage > 1 ? `${styles.card} ${styles.cut}` : styles.card} style={cardStyle}>
-              <div className={styles.instruction} style={{ fontSize: `${instructionPt}pt` }}>
+              <ol className={styles.instruction} style={{ width: `${size}mm`, fontSize: `${instructionPt}pt` }}>
                 {INSTRUCTION.map((line) => (
-                  <div key={line}>{line}</div>
+                  <li key={line}>{line}</li>
                 ))}
-              </div>
+              </ol>
               <MarkerSvg id={id} quietZone={0} style={{ width: `${size}mm`, height: `${size}mm` }} />
               <div className={styles.number} style={{ fontSize: `${numberPt}pt` }}>
                 № {id}
