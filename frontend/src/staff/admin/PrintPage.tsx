@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { MarkerSvg } from "../../aruco/MarkerSvg";
@@ -20,23 +20,49 @@ const GRID: Record<PerPage, { cols: number; rows: number }> = {
   4: { cols: 2, rows: 2 },
 };
 
+// "\n" is a forced line break inside an item.
 const INSTRUCTION = [
   "Посети станцию ФизКвеста",
   "Пройди испытание",
   "Покажи свой код",
-  "Когда пройдешь все станции, получи приз",
+  "Когда пройдешь все станции,\nполучи приз",
 ];
 
 const CELL_PADDING_MM = 8;
 const GAP_MM = 4;
 const PT_MM = 25.4 / 72;
+const PX_PER_MM = 96 / 25.4;
 const LINE_HEIGHT = 1.3;
-// Conservative average glyph width of Cyrillic text, in em.
-const CHAR_EM = 0.6;
 // Left indent of the numbered list that holds the "1." markers, in em.
 const LIST_INDENT_EM = 1.4;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+let measureCtx: CanvasRenderingContext2D | null = null;
+
+/** Lines the instruction takes when word-wrapped to `widthMm`, measured with the page font. */
+function instructionLines(widthMm: number, pt: number): number {
+  measureCtx ??= document.createElement("canvas").getContext("2d");
+  const paragraphs = INSTRUCTION.flatMap((item) => item.split("\n"));
+  if (!measureCtx) return paragraphs.length * 2;
+  measureCtx.font = `${pt}pt ${getComputedStyle(document.body).fontFamily}`;
+  const maxPx = widthMm * PX_PER_MM;
+  let lines = 0;
+  for (const paragraph of paragraphs) {
+    let current = "";
+    lines++;
+    for (const word of paragraph.split(" ")) {
+      const next = current ? `${current} ${word}` : word;
+      if (current && measureCtx.measureText(next).width > maxPx) {
+        lines++;
+        current = word;
+      } else {
+        current = next;
+      }
+    }
+  }
+  return lines;
+}
 
 interface Layout {
   marker: number; // mm
@@ -59,9 +85,7 @@ function layout(paper: Paper, perPage: PerPage): Layout {
   // shrink the marker until the wrapped text fits above it.
   let marker = Math.floor(innerW);
   for (let i = 0; i < 5; i++) {
-    const textW = marker - LIST_INDENT_EM * instructionPt * PT_MM;
-    const charsPerLine = Math.floor(textW / (CHAR_EM * instructionPt * PT_MM));
-    const lines = INSTRUCTION.reduce((n, line) => n + Math.ceil(line.length / charsPerLine), 0);
+    const lines = instructionLines(marker - LIST_INDENT_EM * instructionPt * PT_MM, instructionPt);
     const instructionH = lines * instructionPt * PT_MM * LINE_HEIGHT;
     const next = Math.floor(Math.min(innerW, innerH - instructionH - numberH - 2 * GAP_MM)) - 1;
     if (next >= marker) break;
@@ -84,7 +108,7 @@ export default function PrintPage() {
 
   const { w, h } = PAPER[paper];
   const { cols, rows } = GRID[perPage];
-  const { marker: size, instructionPt, numberPt } = layout(paper, perPage);
+  const { marker: size, instructionPt, numberPt } = useMemo(() => layout(paper, perPage), [paper, perPage]);
   const sheetStyle = {
     width: `${w}mm`,
     height: `${h}mm`,
