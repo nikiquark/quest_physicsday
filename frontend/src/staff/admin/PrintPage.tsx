@@ -22,7 +22,7 @@ const GRID: Record<PerPage, { cols: number; rows: number }> = {
 
 // "\n" is a forced line break inside an item.
 const INSTRUCTION = [
-  "Посети станцию ФизКвеста",
+  "Посети станции ФизКвеста",
   "Пройди испытание",
   "Покажи свой код",
   "Когда пройдешь все станции,\nполучи приз",
@@ -38,22 +38,39 @@ const LIST_INDENT_EM = 1.4;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
+// Marker size options, % of the largest marker that fits the card.
+const SCALES = [100, 90, 80, 70, 60, 50];
+
 let measureCtx: CanvasRenderingContext2D | null = null;
 
-/** Lines the instruction takes when word-wrapped to `widthMm`, measured with the page font. */
-function instructionLines(widthMm: number, pt: number): number {
+/** Canvas context set to the page font at `pt`, for measuring text. */
+function measurer(pt: number): CanvasRenderingContext2D | null {
   measureCtx ??= document.createElement("canvas").getContext("2d");
-  const paragraphs = INSTRUCTION.flatMap((item) => item.split("\n"));
-  if (!measureCtx) return paragraphs.length * 2;
-  measureCtx.font = `${pt}pt ${getComputedStyle(document.body).fontFamily}`;
+  if (measureCtx) measureCtx.font = `${pt}pt ${getComputedStyle(document.body).fontFamily}`;
+  return measureCtx;
+}
+
+const PARAGRAPHS = INSTRUCTION.flatMap((item) => item.split("\n"));
+
+/** Width of the longest unwrapped instruction line, mm. */
+function instructionWidth(pt: number): number {
+  const ctx = measurer(pt);
+  if (!ctx) return Infinity;
+  return Math.max(...PARAGRAPHS.map((p) => ctx.measureText(p).width)) / PX_PER_MM;
+}
+
+/** Lines the instruction takes when word-wrapped to `widthMm`. */
+function instructionLines(widthMm: number, pt: number): number {
+  const ctx = measurer(pt);
+  if (!ctx) return PARAGRAPHS.length * 2;
   const maxPx = widthMm * PX_PER_MM;
   let lines = 0;
-  for (const paragraph of paragraphs) {
+  for (const paragraph of PARAGRAPHS) {
     let current = "";
     lines++;
     for (const word of paragraph.split(" ")) {
       const next = current ? `${current} ${word}` : word;
-      if (current && measureCtx.measureText(next).width > maxPx) {
+      if (current && ctx.measureText(next).width > maxPx) {
         lines++;
         current = word;
       } else {
@@ -66,12 +83,13 @@ function instructionLines(widthMm: number, pt: number): number {
 
 interface Layout {
   marker: number; // mm
+  column: number; // mm, width of the instruction column; the marker is left-aligned in it
   instructionPt: number;
   numberPt: number;
 }
 
-/** Fonts scaled to the card, and the largest marker that fits under the instruction. */
-function layout(paper: Paper, perPage: PerPage): Layout {
+/** Fonts scaled to the card, and the marker at `scale`% of the largest that fits under the instruction. */
+function layout(paper: Paper, perPage: PerPage, scale: number): Layout {
   const { w, h } = PAPER[paper];
   const { cols, rows } = GRID[perPage];
   const innerW = w / cols - 2 * CELL_PADDING_MM;
@@ -80,18 +98,24 @@ function layout(paper: Paper, perPage: PerPage): Layout {
   const instructionPt = clamp(Math.round(base / 7), 9, 20);
   const numberPt = clamp(Math.round(base / 5), 12, 36);
   const numberH = numberPt * PT_MM * LINE_HEIGHT;
+  const indent = LIST_INDENT_EM * instructionPt * PT_MM;
 
-  // The list is as wide as the marker, so a smaller marker wraps more lines:
-  // shrink the marker until the wrapped text fits above it.
-  let marker = Math.floor(innerW);
+  // With the column as wide as the marker, a smaller marker wraps more lines:
+  // shrink it until the wrapped text fits above it.
+  let largest = Math.floor(innerW);
   for (let i = 0; i < 5; i++) {
-    const lines = instructionLines(marker - LIST_INDENT_EM * instructionPt * PT_MM, instructionPt);
+    const lines = instructionLines(largest - indent, instructionPt);
     const instructionH = lines * instructionPt * PT_MM * LINE_HEIGHT;
     const next = Math.floor(Math.min(innerW, innerH - instructionH - numberH - 2 * GAP_MM)) - 1;
-    if (next >= marker) break;
-    marker = next;
+    if (next >= largest) break;
+    largest = next;
   }
-  return { marker, instructionPt, numberPt };
+
+  // A scaled-down marker keeps the column wide enough for unwrapped text (or
+  // the whole card), so the text never takes more lines than it did above.
+  const marker = Math.floor((largest * scale) / 100);
+  const column = Math.min(innerW, Math.max(marker, Math.ceil(instructionWidth(instructionPt) + indent) + 1));
+  return { marker, column, instructionPt, numberPt };
 }
 
 /** Printable paper markers: A4/A5 sheets with 1, 2 or 4 cards (instruction + marker + number). */
@@ -100,6 +124,7 @@ export default function PrintPage() {
   const [to, setTo] = useState(249);
   const [paper, setPaper] = useState<Paper>("A4");
   const [perPage, setPerPage] = useState<PerPage>(4);
+  const [scale, setScale] = useState(70);
 
   const ids: number[] = [];
   for (let id = Math.max(0, from); id <= Math.min(249, to); id++) ids.push(id);
@@ -108,14 +133,18 @@ export default function PrintPage() {
 
   const { w, h } = PAPER[paper];
   const { cols, rows } = GRID[perPage];
-  const { marker: size, instructionPt, numberPt } = useMemo(() => layout(paper, perPage), [paper, perPage]);
+  const { marker: size, column, instructionPt, numberPt } = useMemo(
+    () => layout(paper, perPage, scale),
+    [paper, perPage, scale],
+  );
   const sheetStyle = {
     width: `${w}mm`,
     height: `${h}mm`,
     gridTemplateColumns: `repeat(${cols}, 1fr)`,
     gridTemplateRows: `repeat(${rows}, 1fr)`,
   };
-  const cardStyle = { padding: `${CELL_PADDING_MM}mm`, gap: `${GAP_MM}mm` };
+  const cardStyle = { padding: `${CELL_PADDING_MM}mm` };
+  const columnStyle = { width: `${column}mm`, gap: `${GAP_MM}mm` };
 
   return (
     <div>
@@ -145,8 +174,18 @@ export default function PrintPage() {
             <option value={4}>4</option>
           </select>
         </label>
+        <label>
+          Маркер
+          <select className="input" value={scale} onChange={(e) => setScale(Number(e.target.value))}>
+            {SCALES.map((s) => (
+              <option key={s} value={s}>
+                {s}%
+              </option>
+            ))}
+          </select>
+        </label>
         <span className="muted">
-          {ids.length} маркеров, {pages.length} листов {paper}, маркер {Math.round(size / 10)} см
+          {ids.length} маркеров, {pages.length} листов {paper}, маркер {(size / 10).toFixed(1).replace(".", ",")} см
         </span>
         <button className="btn" onClick={() => window.print()}>
           Печать / PDF
@@ -156,14 +195,18 @@ export default function PrintPage() {
         <section key={page[0]} className={styles.sheet} style={sheetStyle}>
           {page.map((id) => (
             <div key={id} className={perPage > 1 ? `${styles.card} ${styles.cut}` : styles.card} style={cardStyle}>
-              <ol className={styles.instruction} style={{ width: `${size}mm`, fontSize: `${instructionPt}pt` }}>
-                {INSTRUCTION.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ol>
-              <MarkerSvg id={id} quietZone={0} style={{ width: `${size}mm`, height: `${size}mm` }} />
-              <div className={styles.number} style={{ fontSize: `${numberPt}pt` }}>
-                № {id}
+              <div className={styles.column} style={columnStyle}>
+                <ol className={styles.instruction} style={{ fontSize: `${instructionPt}pt` }}>
+                  {INSTRUCTION.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ol>
+                <div style={{ width: `${size}mm` }}>
+                  <MarkerSvg id={id} quietZone={0} style={{ display: "block", width: `${size}mm`, height: `${size}mm` }} />
+                  <div className={styles.number} style={{ fontSize: `${numberPt}pt`, marginTop: `${GAP_MM}mm` }}>
+                    № {id}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
