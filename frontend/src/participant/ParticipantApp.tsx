@@ -94,7 +94,7 @@ function Quest({ state, online }: { state: ParticipantState; online: boolean }) 
                 Осталось пройти: <b>{left}</b> {plural(left, "станция", "станции", "станций")}
               </div>
             )}
-            <QuestMap stations={stations} highlightIds={currentIds} labelHighlighted />
+            <QuestMap stations={stations} highlightIds={currentIds} labelHighlighted showNumbers={false} />
           </>
         )}
       </main>

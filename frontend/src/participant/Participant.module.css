@@ -225,11 +225,11 @@
   text-align: center;
 }
 
-/* --- code button --- */
+/* --- code button (bottom right) --- */
 
 .codeButton {
   position: fixed;
-  left: 20px;
+  right: 20px;
   bottom: calc(20px + env(safe-area-inset-bottom));
   z-index: 10;
   display: grid;

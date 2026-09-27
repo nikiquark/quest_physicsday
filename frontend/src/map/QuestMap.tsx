@@ -23,6 +23,8 @@ interface Props {
   highlightIds?: number[];
   /** Show the name label next to highlighted pins. */
   labelHighlighted?: boolean;
+  /** Station numbers on pins; participants don't see them (in route order they look random). */
+  showNumbers?: boolean;
   editable?: boolean;
   onMove?: (id: number, x: number, y: number) => void;
   className?: string;
@@ -30,7 +32,15 @@ interface Props {
 
 const clamp = (v: number) => Math.min(1, Math.max(0, v));
 
-export function QuestMap({ stations, highlightIds = [], labelHighlighted, editable, onMove, className }: Props) {
+export function QuestMap({
+  stations,
+  highlightIds = [],
+  labelHighlighted,
+  showNumbers = true,
+  editable,
+  onMove,
+  className,
+}: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<{ id: number; x: number; y: number } | null>(null);
   // Open the floor of the (first) highlighted station, and follow it when it moves to another floor.
@@ -105,7 +115,9 @@ export function QuestMap({ stations, highlightIds = [], labelHighlighted, editab
               }
             >
               {highlighted && <span className={styles.pulse} />}
-              <span className={styles.dot}>{station.visited ? "✓" : station.is_finish ? "🏁" : station.number}</span>
+              <span className={styles.dot}>
+                {station.visited ? "✓" : station.is_finish ? "🏁" : showNumbers ? station.number : null}
+              </span>
               {(editable || (labelHighlighted && highlighted)) && <span className={styles.label}>{station.name}</span>}
             </div>
           );
