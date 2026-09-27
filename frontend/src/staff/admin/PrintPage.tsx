@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { storageGet, storageSet } from "../../api/client";
 import { MarkerSvg } from "../../aruco/MarkerSvg";
+import { plural } from "../../lib/plural";
 import styles from "./Print.module.css";
 
 type Paper = "A4" | "A5";
@@ -49,15 +50,6 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 
 // Marker size options, % of the largest marker that fits the card.
 const SCALES = [100, 90, 80, 70, 60, 50];
-
-/** Russian plural form for `n`: one (1, 21), few (2–4, 22–24), many (0, 5–20, 25). */
-function plural(n: number, one: string, few: string, many: string): string {
-  const d = n % 10;
-  const dd = n % 100;
-  if (d === 1 && dd !== 11) return one;
-  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return few;
-  return many;
-}
 
 let measureBox: HTMLDivElement | null = null;
 
