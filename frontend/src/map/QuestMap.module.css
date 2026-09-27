@@ -1,3 +1,48 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.floors {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.floorTab {
+  position: relative;
+  flex: 1;
+  min-height: 40px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.floorTabActive {
+  background: var(--brand);
+  color: #fff;
+}
+
+/* the floor has a highlighted station */
+.floorMark {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+.floorTabActive .floorMark {
+  background: #fff;
+}
+
 .wrap {
   position: relative;
   width: 100%;

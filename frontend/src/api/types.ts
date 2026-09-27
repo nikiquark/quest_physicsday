@@ -3,6 +3,7 @@ export interface Station {
   name: string;
   number: number;
   description: string;
+  floor: number;
   x: number;
   y: number;
   is_finish: boolean;

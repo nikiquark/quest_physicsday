@@ -1,12 +1,12 @@
 from django.db import transaction
 
-from quest.models import Participant, Station
+from quest.models import FLOORS, Participant, Station
 from quest.services.participants import QuestError
 from quest.services.routes import add_station_to_routes
 from quest.services.state import recompute_current
 
-EDITABLE = ("name", "number", "description", "x", "y", "enabled")
-FINISH_EDITABLE = ("name", "description", "x", "y")
+EDITABLE = ("name", "number", "description", "floor", "x", "y", "enabled")
+FINISH_EDITABLE = ("name", "description", "floor", "x", "y")
 
 
 def _clean(data: dict, allowed) -> dict:
@@ -17,6 +17,8 @@ def _clean(data: dict, allowed) -> dict:
         value = data[key]
         if key in ("x", "y"):
             value = min(1.0, max(0.0, float(value)))
+        elif key == "floor":
+            value = min(FLOORS[-1], max(FLOORS[0], int(value)))
         elif key == "number":
             value = max(0, int(value))
         elif key == "enabled":

@@ -3,14 +3,17 @@ from django.db import models
 
 PAPER_MARKERS = range(0, 250)
 PHONE_MARKERS = range(250, 1000)
+FLOORS = (1, 2, 3)
 
 
 class Station(models.Model):
     name = models.CharField(max_length=100)
     number = models.PositiveIntegerField(default=0)
     description = models.CharField(max_length=300, blank=True)
+    floor = models.PositiveSmallIntegerField(default=1, choices=[(f, f"{f} этаж") for f in FLOORS])
+    # Position on the floor plan, in fractions of its size.
     x = models.FloatField(default=0.5)
-    y = models.FloatField(default=0.294)  # centre of the first floor on the map
+    y = models.FloatField(default=0.545)  # centre of the floor's crossbar
     enabled = models.BooleanField(default=True)
     is_finish = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

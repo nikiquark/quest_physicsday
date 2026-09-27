@@ -76,6 +76,7 @@ def station_payload(station: Station) -> dict:
         "name": station.name,
         "number": station.number,
         "description": station.description,
+        "floor": station.floor,
         "x": station.x,
         "y": station.y,
         "is_finish": station.is_finish,

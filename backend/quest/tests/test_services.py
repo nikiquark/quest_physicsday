@@ -189,6 +189,15 @@ def test_finish_cannot_be_disabled(finish):
     assert finish.x == 1.0
 
 
+def test_station_floor_is_clamped_and_sent_to_participants(stations):
+    update_station(stations[0], {"floor": 3})
+    update_station(stations[1], {"floor": 7})
+    update_station(stations[2], {"floor": 0})
+    kid = register("k")
+    floors = {s["id"]: s["floor"] for s in state_for(kid)["stations"]}
+    assert (floors[stations[0].id], floors[stations[1].id], floors[stations[2].id]) == (3, 3, 1)
+
+
 # --- prizes ------------------------------------------------------------------------------------
 
 

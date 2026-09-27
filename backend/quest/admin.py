@@ -5,7 +5,7 @@ from quest.models import EventLog, Participant, Settings, StaffPin, Station, Vis
 
 @admin.register(Station)
 class StationAdmin(admin.ModelAdmin):
-    list_display = ("number", "name", "enabled", "is_finish", "x", "y")
+    list_display = ("number", "name", "enabled", "is_finish", "floor", "x", "y")
 
 
 @admin.register(Participant)
