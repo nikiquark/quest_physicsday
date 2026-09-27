@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError, api } from "../../api/client";
 import type { ParticipantState } from "../../api/types";
-import { StationList } from "../../components/StationList";
 import { QuestMap } from "../../map/QuestMap";
 import type { DetectedMarker } from "../../scanner/detector";
 import { ScannerView, type Box } from "../../scanner/ScannerView";
@@ -51,7 +50,8 @@ export default function HelpPage() {
     let cancelled = false;
     const load = async () => {
       try {
-        const state = await api<ParticipantState>(`staff/markers/${tracked}`, { auth: "staff" });
+        // Also gives a paper participant without a station the least loaded one.
+        const state = await api<ParticipantState>(`staff/markers/${tracked}/help`, { method: "POST", auth: "staff" });
         if (!cancelled) setInfo({ marker: tracked, state, unknown: false });
       } catch (err) {
         if (!cancelled && err instanceof ApiError && err.code === "unknown_marker")
@@ -103,15 +103,8 @@ function Panel({ info }: { info: Info }) {
   if (!info.state) return <p className={styles.loading}>№ {info.marker}…</p>;
 
   const { participant, stations } = info.state;
-  const highlight =
-    participant.kind === "paper"
-      ? stations.filter((s) => !s.visited && !s.is_finish).map((s) => s.id)
-      : participant.current_station_id
-        ? [participant.current_station_id]
-        : [];
-  if (participant.kind === "paper" && participant.all_done && !participant.prize_at && participant.current_station_id) {
-    highlight.push(participant.current_station_id);
-  }
+  const current = stations.find((s) => s.id === participant.current_station_id);
+  const highlight = current ? [current.id] : [];
   const passed = stations.filter((s) => s.visited && !s.is_finish).length;
   const total = stations.filter((s) => !s.is_finish).length;
 
@@ -124,10 +117,13 @@ function Panel({ info }: { info: Info }) {
           {participant.prize_at ? "Квест пройден, приз получен 🎉" : `Пройдено ${passed} из ${total}`}
         </div>
       </div>
-      <div className={styles.list}>
-        <StationList stations={stations} currentIds={highlight} showNumbers={false} />
-      </div>
-      <QuestMap stations={stations} highlightIds={highlight} />
+      {current && (
+        <div className={styles.current}>
+          <span className={styles.currentLabel}>{current.is_finish ? "Все станции пройдены! Иди на" : "Иди на станцию"}</span>
+          <span className={styles.currentName}>{current.name}</span>
+        </div>
+      )}
+      <QuestMap stations={stations} highlightIds={highlight} labelHighlighted />
     </div>
   );
 }

@@ -53,8 +53,24 @@
   font-weight: 600;
 }
 
-.list {
-  font-size: 15px;
+.current {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--brand);
+  color: #fff;
+}
+
+.currentLabel {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.currentName {
+  font-size: 24px;
+  font-weight: 700;
 }
 
 .logout {
