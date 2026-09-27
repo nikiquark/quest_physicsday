@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 
 import { api, errorText } from "../../api/client";
 import type { DashboardStats, Station } from "../../api/types";
-import { QuestMap } from "../../map/QuestMap";
+import { FLOORS, QuestMap } from "../../map/QuestMap";
 import styles from "./Admin.module.css";
 
-type Draft = Pick<Station, "name" | "number" | "description">;
+type Draft = Pick<Station, "name" | "number" | "description" | "floor">;
 
 export function StationsTab({ stats }: { stats: DashboardStats | null }) {
   const [stations, setStations] = useState<Station[]>([]);
@@ -48,7 +48,10 @@ export function StationsTab({ stats }: { stats: DashboardStats | null }) {
     <div className={styles.split}>
       <section className={styles.stack}>
         <h2>Карта</h2>
-        <p className="muted">Перетащите метку станции, чтобы изменить её место. Позиция сохраняется сразу.</p>
+        <p className="muted">
+          Перетащите метку станции, чтобы изменить её место. Позиция сохраняется сразу. Этаж станции меняется кнопкой
+          «Изменить».
+        </p>
         <div className={styles.mapBox}>
           <QuestMap stations={stations} editable onMove={(id, x, y) => patch(id, { x, y })} />
         </div>
@@ -76,7 +79,9 @@ export function StationsTab({ stats }: { stats: DashboardStats | null }) {
               <div className={styles.stationInfo}>
                 <b>{s.name}</b>
                 {s.description && <span className="muted">{s.description}</span>}
-                <span className={styles.statNote}>сейчас идут: {active.get(s.id) ?? 0}</span>
+                <span className={styles.statNote}>
+                  {s.floor} этаж · сейчас идут: {active.get(s.id) ?? 0}
+                </span>
               </div>
               <button className="btn btn-ghost" onClick={() => setEditing(s.id)}>
                 Изменить
@@ -98,12 +103,12 @@ export function StationsTab({ stats }: { stats: DashboardStats | null }) {
         <h3>Новая станция</h3>
         <StationForm
           key={nextNumber}
-          initial={{ name: "", number: nextNumber, description: "" }}
+          initial={{ name: "", number: nextNumber, description: "", floor: FLOORS[0] }}
           submitLabel="Добавить станцию"
           onSubmit={create}
         />
         <p className="muted">
-          Новая станция появится на первом этаже по центру — перетащите её на нужное место. Участникам, которые ещё в пути, она
+          Новая станция появится по центру выбранного этажа — перетащите её на нужное место. Участникам, которые ещё в пути, она
           добавится в случайное место среди непройденных.
         </p>
       </section>
@@ -135,7 +140,7 @@ function StationForm({
         setBusy(true);
         await onSubmit({ ...draft, name: draft.name.trim() });
         setBusy(false);
-        if (!onCancel) setDraft({ name: "", number: draft.number + 1, description: "" });
+        if (!onCancel) setDraft({ name: "", number: draft.number + 1, description: "", floor: draft.floor });
       }}
     >
       <div className={styles.formRow}>
@@ -156,6 +161,18 @@ function StationForm({
           value={draft.name}
           onChange={(e) => setDraft({ ...draft, name: e.target.value })}
         />
+        <select
+          className={`input ${styles.floorSelect}`}
+          value={draft.floor}
+          onChange={(e) => setDraft({ ...draft, floor: Number(e.target.value) })}
+          aria-label="Этаж"
+        >
+          {FLOORS.map((f) => (
+            <option key={f} value={f}>
+              {f} этаж
+            </option>
+          ))}
+        </select>
       </div>
       <input
         className="input"

@@ -233,6 +233,11 @@
   flex: none;
 }
 
+.floorSelect {
+  width: auto;
+  flex: none;
+}
+
 .searchInput {
   max-width: 220px;
   font-size: 20px;
