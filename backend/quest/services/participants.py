@@ -5,8 +5,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 from quest.models import PHONE_MARKERS, EventLog, Participant, Settings, Station, Visit
-from quest.services.routes import current_load, generate_route
-from quest.services.state import StationSnapshot, recompute_current
+from quest.services.state import StationSnapshot, current_load, least_loaded, recompute_current
 
 
 class QuestError(Exception):
@@ -41,14 +40,14 @@ def register(name: str) -> Participant:
         if marker_id not in PHONE_MARKERS:
             raise NoMarkersLeft()
         snap = StationSnapshot.load()
-        route = generate_route([s.id for s in snap.stations], current_load())
+        route = [s.id for s in snap.stations]
         return Participant.objects.create(
             kind=Participant.PHONE,
             marker_id=marker_id,
             name=name,
             token=secrets.token_urlsafe(24),
             route=route,
-            current_station_id=route[0] if route else snap.finish.id,
+            current_station_id=least_loaded(route, current_load()) if route else snap.finish.id,
             activated_at=timezone.now(),
         )
 
@@ -64,6 +63,23 @@ def by_marker(marker_id: int) -> Participant:
     if participant is None:
         raise UnknownMarker()
     return participant
+
+
+def send_to_station(participant: Participant) -> list[Participant]:
+    """Help screen lookup: a paper participant without a station gets the least loaded one.
+
+    Activates the paper marker (it is in play). Idempotent. Returns changed participants.
+    """
+    if participant.kind != Participant.PAPER or participant.prize_at:
+        return []
+    with transaction.atomic():
+        locked = Participant.objects.select_for_update().get(pk=participant.pk)
+        if locked.activated_at is None:
+            locked.activated_at = timezone.now()
+            locked.save(update_fields=["activated_at"])
+        changed = recompute_current([locked], assign_paper=True)
+    participant.refresh_from_db()
+    return changed
 
 
 def add_visit_manual(participant: Participant, station: Station) -> None:

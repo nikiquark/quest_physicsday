@@ -11,6 +11,7 @@ urlpatterns = [
     path("staff/stations", views.StationListView.as_view()),
     path("staff/markers/<int:marker_id>", views.MarkerView.as_view()),
     path("staff/markers/<int:marker_id>/prize", views.PrizeView.as_view()),
+    path("staff/markers/<int:marker_id>/help", views.HelpMarkerView.as_view()),
     path("admin/stats", views.StatsView.as_view()),
     path("admin/stations", views.AdminStationsView.as_view()),
     path("admin/stations/<int:station_id>", views.AdminStationView.as_view()),

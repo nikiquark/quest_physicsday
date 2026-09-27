@@ -1,6 +1,7 @@
-"""Derived participant state: current station, completion, and the payload sent to clients."""
+"""Participant state: current station assignment, completion, and the payload sent to clients."""
 
-from collections import defaultdict
+import random
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 
 from quest.models import Participant, Station, Visit
@@ -23,23 +24,11 @@ class StationSnapshot:
 
 
 def required_station_ids(participant: Participant, snap: StationSnapshot) -> list[int]:
-    """Stations the participant must pass, in their order (phone: route order)."""
-    enabled = snap.enabled_ids
+    """Stations the participant must pass, in display order."""
     if participant.kind == Participant.PAPER:
         return [s.id for s in snap.stations]
-    return [sid for sid in participant.route if sid in enabled]
-
-
-def compute_current_id(participant: Participant, visited: set[int], snap: StationSnapshot) -> int | None:
-    if participant.prize_at:
-        return None
-    required = required_station_ids(participant, snap)
-    pending = [sid for sid in required if sid not in visited]
-    if not pending:
-        return snap.finish.id
-    if participant.kind == Participant.PAPER:
-        return None  # paper participants have no route, any order
-    return pending[0]
+    route = set(participant.route)
+    return [s.id for s in snap.stations if s.id in route]
 
 
 def is_all_done(participant: Participant, visited: set[int], snap: StationSnapshot) -> bool:
@@ -53,21 +42,59 @@ def visits_by_participant(participant_ids) -> dict[int, dict[int, "Visit"]]:
     return result
 
 
-def recompute_current(participants, snap: StationSnapshot | None = None) -> None:
-    """Refresh the denormalized current_station for the given participants."""
+def current_load() -> Counter:
+    """Number of participants currently sent to each station."""
+    rows = (
+        Participant.objects.filter(prize_at__isnull=True)
+        .exclude(current_station=None)
+        .values_list("current_station_id", flat=True)
+    )
+    return Counter(rows)
+
+
+def least_loaded(station_ids: list[int], load: Counter, rng: random.Random | None = None) -> int:
+    """The station with the fewest participants sent to it (random among ties)."""
+    min_load = min(load.get(sid, 0) for sid in station_ids)
+    return (rng or random).choice([sid for sid in station_ids if load.get(sid, 0) == min_load])
+
+
+def recompute_current(
+    participants, snap: StationSnapshot | None = None, assign_paper: bool = False
+) -> list[Participant]:
+    """Keep each participant's current station while it is still pending, otherwise send them on.
+
+    The next station is not known in advance: it is the least loaded pending one at the moment
+    the previous one is passed. Paper participants have no route and walk to any station; they
+    get one only on request (`assign_paper`, the help screen). All passed — the finish; prize — none.
+    Returns the participants whose current station changed (saved).
+    """
     participants = list(participants)
     if not participants:
-        return
+        return []
     snap = snap or StationSnapshot.load()
     visits = visits_by_participant(p.id for p in participants)
+    load = current_load()
     changed = []
     for p in participants:
-        new_id = compute_current_id(p, set(visits[p.id]), snap)
+        pending = [sid for sid in required_station_ids(p, snap) if sid not in visits[p.id]]
+        if p.prize_at:
+            new_id = None
+        elif not pending:
+            new_id = snap.finish.id
+        elif p.current_station_id in pending:
+            new_id = p.current_station_id
+        elif p.kind == Participant.PAPER and not assign_paper:
+            new_id = None
+        else:
+            new_id = least_loaded(pending, load)
         if new_id != p.current_station_id:
+            load[p.current_station_id] -= 1
+            load[new_id] += 1
             p.current_station_id = new_id
             changed.append(p)
     if changed:
         Participant.objects.bulk_update(changed, ["current_station"])
+    return changed
 
 
 def station_payload(station: Station) -> dict:
@@ -110,7 +137,7 @@ def build_state(participant: Participant, visits: dict[int, Visit], snap: Statio
             "kind": participant.kind,
             "activated": participant.activated_at is not None,
             "all_done": is_all_done(participant, visited, snap),
-            "current_station_id": compute_current_id(participant, visited, snap),
+            "current_station_id": participant.current_station_id,
             "prize_at": participant.prize_at.isoformat() if participant.prize_at else None,
             "prize_forced": participant.prize_forced,
         },

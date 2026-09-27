@@ -12,12 +12,12 @@ from quest.services.participants import (
     add_visit_manual,
     register,
     remove_visit_manual,
+    send_to_station,
 )
 from quest.services.prizes import AlreadyGranted, NotComplete, grant_prize
-from quest.services.routes import generate_route, insert_into_route
 from quest.services.scans import process_scan
 from quest.services.seed import reset_quest
-from quest.services.state import state_for
+from quest.services.state import least_loaded, state_for
 from quest.services.stations import create_station, update_station
 from quest.services.stats import active_phone_participants, dashboard_stats
 
@@ -37,29 +37,41 @@ def test_seed_creates_finish_pins_and_paper_markers(seeded):
     assert {p.role: p.pin for p in StaffPin.objects.all()} == StaffPin.DEFAULTS
 
 
-# --- routes ------------------------------------------------------------------------------
+# --- station assignment --------------------------------------------------------------------
 
 
-def test_generate_route_starts_at_least_loaded_station():
-    route = generate_route([1, 2, 3], Counter({1: 5, 2: 0, 3: 2}), random.Random(1))
-    assert route[0] == 2
-    assert sorted(route) == [1, 2, 3]
+def test_least_loaded_station():
+    assert least_loaded([1, 2, 3], Counter({1: 5, 2: 0, 3: 2}), random.Random(1)) == 2
 
 
-def test_generate_route_breaks_ties_randomly():
-    firsts = {generate_route([1, 2, 3], Counter(), random.Random(seed))[0] for seed in range(50)}
-    assert firsts == {1, 2, 3}
-
-
-def test_insert_into_route_only_among_pending():
-    for seed in range(30):
-        route = insert_into_route([1, 2, 3], 9, visited={1, 2}, rng=random.Random(seed))
-        assert route.index(9) >= 2
+def test_least_loaded_breaks_ties_randomly():
+    assert {least_loaded([1, 2, 3], Counter(), random.Random(seed)) for seed in range(50)} == {1, 2, 3}
 
 
 def test_registration_spreads_first_stations(stations):
-    firsts = Counter(register(f"kid{i}").route[0] for i in range(8))
+    firsts = Counter(register(f"kid{i}").current_station_id for i in range(8))
     assert set(firsts.values()) == {2}  # 8 kids over 4 empty stations: 2 each
+
+
+def test_next_station_is_least_loaded_after_passing(stations):
+    kid = register("k")
+    first = kid.current_station_id
+    others = [s.id for s in stations if s.id != first]
+    # Load two of the other stations: the kid must be sent to the third one.
+    busy = [register(f"b{i}") for i in range(20)]
+    Participant.objects.filter(pk__in=[b.pk for b in busy[:10]]).update(current_station_id=others[0])
+    Participant.objects.filter(pk__in=[b.pk for b in busy[10:]]).update(current_station_id=others[1])
+    process_scan(first, [kid.marker_id])
+    kid.refresh_from_db()
+    assert kid.current_station_id == others[2]
+
+
+def test_scanned_group_is_spread_over_stations(stations):
+    kids = [register(f"k{i}") for i in range(4)]
+    Participant.objects.filter(pk__in=[k.pk for k in kids]).update(current_station_id=stations[0].id)
+    process_scan(stations[0].id, [k.marker_id for k in kids])
+    nexts = Counter(Participant.objects.filter(pk__in=[k.pk for k in kids]).values_list("current_station_id", flat=True))
+    assert set(nexts) == {s.id for s in stations[1:]}  # 4 kids over the 3 remaining stations
 
 
 def test_registration_assigns_sequential_phone_markers(stations):
@@ -112,15 +124,16 @@ def test_scan_on_disabled_station(stations):
     assert changed == []
 
 
-def test_scan_out_of_order_counts_and_moves_current(stations):
+def test_scan_elsewhere_counts_and_keeps_current(stations):
     kid = register("k")
-    first, second = kid.route[0], kid.route[1]
-    process_scan(second, [kid.marker_id])
+    assigned = kid.current_station_id
+    other = next(s.id for s in stations if s.id != assigned)
+    process_scan(other, [kid.marker_id])
     kid.refresh_from_db()
-    assert kid.current_station_id == first
-    process_scan(first, [kid.marker_id])
+    assert kid.current_station_id == assigned
+    process_scan(assigned, [kid.marker_id])
     kid.refresh_from_db()
-    assert kid.current_station_id == kid.route[2]
+    assert kid.current_station_id not in (assigned, other, None)
 
 
 def test_paper_marker_activates_on_first_scan(stations):
@@ -130,6 +143,27 @@ def test_paper_marker_activates_on_first_scan(stations):
     paper.refresh_from_db()
     assert paper.activated_at is not None
     assert paper.current_station_id is None  # paper has no route
+
+
+def test_help_sends_paper_to_least_loaded_station(stations):
+    kids = [register(f"k{i}") for i in range(3)]
+    Participant.objects.filter(pk__in=[k.pk for k in kids]).update(current_station_id=stations[0].id)
+    paper = Participant.objects.get(marker_id=7)
+    assert send_to_station(paper) == [paper]
+    assert paper.activated_at is not None
+    assigned = paper.current_station_id
+    assert assigned in {s.id for s in stations[1:]}
+    assert send_to_station(paper) == []  # idempotent: keeps the station
+    assert state_for(paper)["participant"]["current_station_id"] == assigned
+
+    process_scan(assigned, [7])  # passed: free to go anywhere again
+    paper.refresh_from_db()
+    assert paper.current_station_id is None
+
+
+def test_help_does_not_touch_phone_participants(stations):
+    kid = register("k")
+    assert send_to_station(kid) == []
 
 
 def test_all_done_moves_to_finish(stations, finish):
@@ -157,7 +191,6 @@ def test_new_station_inserted_for_walking_participants_only(stations):
     walking.refresh_from_db()
     done.refresh_from_db()
     assert new.id in walking.route
-    assert walking.route.index(new.id) >= 1  # never before already passed stations
     assert new.id not in done.route
     assert state_for(done)["participant"]["all_done"] is True
 
@@ -303,7 +336,7 @@ def test_login_rate_limit(seeded):
 
 def test_active_phone_participants(stations, finish):
     kids = [register(f"k{i}") for i in range(3)]
-    process_scan(kids[0].route[0], [kids[0].marker_id, 5])  # 5 is paper: not listed
+    process_scan(kids[0].current_station_id, [kids[0].marker_id, 5])  # 5 is paper: not listed
     grant_prize(kids[1], force=True)  # got the prize: not active any more
     for s in stations:
         process_scan(s.id, [kids[2].marker_id])
@@ -312,6 +345,7 @@ def test_active_phone_participants(stations, finish):
     assert set(rows) == {kids[0].marker_id, kids[2].marker_id}
     first = rows[kids[0].marker_id]
     assert (first["name"], first["passed"], first["total"]) == ("k0", 1, 4)
-    assert first["current_station"] == Station.objects.get(pk=kids[0].route[1]).name
+    kids[0].refresh_from_db()
+    assert first["current_station"] == kids[0].current_station.name
     assert rows[kids[2].marker_id]["at_finish"] is True
     assert rows[kids[2].marker_id]["current_station"] == finish.name

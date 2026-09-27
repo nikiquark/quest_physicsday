@@ -13,6 +13,7 @@ from quest.services.participants import (
     by_marker,
     register,
     remove_visit_manual,
+    send_to_station,
 )
 from quest.services.prizes import grant_prize
 from quest.services.seed import reset_quest
@@ -100,6 +101,18 @@ class MarkerView(StaffView):
 
     def get(self, request, marker_id: int):
         return Response(state_for(by_marker(marker_id)))
+
+
+class HelpMarkerView(StaffView):
+    """Help screen: like MarkerView, but a paper participant without a station gets one."""
+
+    roles = (StaffPin.HELP,)
+
+    def post(self, request, marker_id: int):
+        participant = by_marker(marker_id)
+        if send_to_station(participant):
+            broadcast.admin_dirty()
+        return Response(state_for(participant))
 
 
 class PrizeView(StaffView):

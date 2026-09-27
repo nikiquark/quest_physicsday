@@ -65,6 +65,15 @@ def test_prize_flow(stations):
     assert prize.get("/api/staff/markers/998").json()["code"] == "unknown_marker"
 
 
+def test_help_lookup_assigns_paper_station(stations):
+    assert staff_client("222222").post("/api/staff/markers/7/help").status_code == 403
+    help_ = staff_client("333333")
+    res = help_.post("/api/staff/markers/7/help")
+    assert res.status_code == 200
+    assert res.json()["participant"]["current_station_id"] in {s.id for s in stations}
+    assert help_.post("/api/staff/markers/998/help").json()["code"] == "unknown_marker"
+
+
 def test_admin_reset_requires_pin(stations):
     admin = staff_client("0987")
     assert admin.post("/api/admin/reset", {"pin": "1111"}, format="json").status_code == 403
