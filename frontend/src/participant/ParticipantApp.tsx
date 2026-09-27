@@ -122,7 +122,7 @@ function CodeTab({ markerId }: { markerId: number }) {
     <div className={styles.codeTabBody}>
       <MarkerSvg id={markerId} quietZone={1} className={styles.marker} />
       <div className={styles.markerNumber}>№ {markerId}</div>
-      <p className={styles.codeHint}>Покажи этот код начальнику станции. Сделай экран поярче.</p>
+      <p className={styles.codeHint}>Покажи этот код организатору на станции. Сделай экран поярче.</p>
     </div>
   );
 }
