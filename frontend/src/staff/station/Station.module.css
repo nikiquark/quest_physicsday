@@ -1,7 +1,17 @@
 .stationBtn {
   justify-content: flex-start;
+  gap: 12px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   color: var(--text);
   border-color: var(--line);
+}
+
+/* long names wrap next to the number instead of squeezing its circle */
+.stationName {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
 .stationNum,
@@ -14,6 +24,7 @@
   background: var(--brand);
   color: #fff;
   font-weight: 700;
+  flex: none;
 }
 
 .stationTitle {
@@ -30,7 +41,6 @@
   width: 48px;
   height: 48px;
   font-size: 22px;
-  flex: none;
 }
 
 .scanBtn {

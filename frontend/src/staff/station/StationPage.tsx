@@ -64,7 +64,8 @@ export default function StationPage() {
           {stations?.length === 0 && <p className="muted">Станций пока нет. Их добавляет администратор.</p>}
           {stations?.map((s) => (
             <button key={s.id} className={`btn btn-outline btn-lg btn-block ${styles.stationBtn}`} onClick={() => choose(s.id)}>
-              <span className={styles.stationNum}>{s.number}</span> {s.name}
+              <span className={styles.stationNum}>{s.number}</span>
+              <span className={styles.stationName}>{s.name}</span>
             </button>
           ))}
         </div>
